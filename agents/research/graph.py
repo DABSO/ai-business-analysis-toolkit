@@ -12,7 +12,9 @@ from langchain_core.runnables import RunnableConfig
 
 from langgraph.constants import Send
 from langgraph.graph import START, END, StateGraph
-from langsmith import traceable
+
+from .utils import format_sections
+
 
 from .schemas import (
     ReportState,
@@ -25,7 +27,7 @@ from .schemas import (
     Sections
 )
 from .config import Configuration, DEFAULT_REPORT_STRUCTURE
-from .utils import deduplicate_and_format_sources, format_sections
+
 
 from dotenv import load_dotenv
 import logging
@@ -33,20 +35,18 @@ import logging
 logger = logging.getLogger(__name__)
 
 load_dotenv()
+from tools.tavily_search import tavily_search_async, deduplicate_and_format_sources
 
 # ------------------------------------------------------------
 # LLMs 
 
-report_planner_model = ChatOpenAI(model="gpt-4o", temperature=0)
-report_writer_model = ChatOpenAI(model="gpt-4o", temperature=0)
+report_planner_model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+report_writer_model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 # ------------------------------------------------------------
 # Search
 
-from tavily import TavilyClient, AsyncTavilyClient
 
-tavily_client = TavilyClient()
-tavily_async_client = AsyncTavilyClient()
 
 # ------------------------------------------------------------
 # Utility function for loading prompts
@@ -80,39 +80,7 @@ def log_function_call(func_name: str, **kwargs):
     params_str = ', '.join(f'{k}={v}' for k, v in kwargs.items())
     logger.info(f"Executing {func_name} with params: {params_str}")
 
-@traceable
-def tavily_search(query):
-    """Search the web using the Tavily API."""
-    return tavily_client.search(query, max_results=5, include_raw_content=True)
 
-@traceable
-async def tavily_search_async(search_queries, tavily_topic, tavily_days):
-    """Performs concurrent web searches using the Tavily API."""
-    search_tasks = []
-    for query in search_queries:
-        if tavily_topic == "news":
-            search_tasks.append(
-                tavily_async_client.search(
-                    query,
-                    max_results=5,
-                    include_raw_content=True,
-                    topic="news",
-                    days=tavily_days
-                )
-            )
-        else:
-            search_tasks.append(
-                tavily_async_client.search(
-                    query,
-                    max_results=5,
-                    include_raw_content=True,
-                    topic="general"
-                )
-            )
-
-    # Execute all searches concurrently
-    search_docs = await asyncio.gather(*search_tasks)
-    return search_docs
 
 async def generate_report_plan(state: ReportState, config: RunnableConfig):
     """Generate the report plan"""
@@ -201,7 +169,7 @@ def generate_queries(state: SectionState, config: RunnableConfig):
     # Generate queries  
     queries = structured_llm.invoke([
         SystemMessage(content=system_instructions),
-        HumanMessage(content="Generate search queries on the provided topic.")
+        HumanMessage(content="Generate goal oriented search queries on the provided topic.")
     ])
 
     return {"search_queries": queries.queries}
@@ -349,11 +317,15 @@ def compile_final_report(state: ReportState):
 
 # ------------------------------------------------------------
 # Build Section Graph
-
+# instantiate the StateGraph
 section_builder = StateGraph(SectionState, output=SectionOutputState)
+
+# Add nodes
 section_builder.add_node("generate_queries", generate_queries)
 section_builder.add_node("search_web", search_web)
 section_builder.add_node("write_section", write_section)
+
+# Add edges for flow control
 
 section_builder.add_edge(START, "generate_queries")
 section_builder.add_edge("generate_queries", "search_web")
@@ -373,6 +345,8 @@ def build_report_graph():
         output=ReportStateOutput, 
         config_schema=Configuration
     )
+
+
     builder.add_node("generate_report_plan", generate_report_plan)
     builder.add_node("build_section_with_web_research", section_builder.compile())
     builder.add_node("gather_completed_sections", gather_completed_sections)

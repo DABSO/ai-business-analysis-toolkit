@@ -1,9 +1,67 @@
-import operator
+from tavily import TavilyClient, AsyncTavilyClient
+import asyncio
+from langsmith import traceable
 from typing import List, Union, Dict
-from .schemas import Section
-import logging
+import os
+tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
+tavily_async_client = AsyncTavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
 
-logger = logging.getLogger(__name__)
+
+@traceable
+def tavily_search(query):
+    """Search the web using the Tavily API."""
+    return tavily_client.search(query, max_results=5, include_raw_content=True)
+
+@traceable
+async def tavily_search_async(search_queries, max_results=5, tavily_topic="general", tavily_days=30,):
+    """Performs concurrent web searches using the Tavily API."""
+    search_tasks = []
+    
+    for query in search_queries:
+        if tavily_topic == "news":
+            search_tasks.append(
+                tavily_async_client.search(
+                    query,
+                    max_results=max_results,
+                    include_raw_content=True,
+                    topic=tavily_topic,
+                    days=tavily_days
+                )
+            )
+        else:
+            search_tasks.append(
+                tavily_async_client.search(
+                    query,
+                    max_results=max_results,
+                    include_raw_content=True,
+                    topic=tavily_topic,
+                
+            )
+        )
+        
+
+    # Execute all searches concurrently
+    search_docs = await asyncio.gather(*search_tasks)
+
+    return search_docs
+
+
+def get_unique_urls(search_response):
+    if isinstance(search_response, dict):
+        sources_list = search_response.get('results', [])
+    elif isinstance(search_response, list):
+        sources_list = []
+        for response in search_response:
+            sources_list.extend(response.get('results', []) if isinstance(response, dict) else response)
+    
+    # Extract and return unique URLs
+    unique_urls = set()
+    for source in sources_list:
+        if url := source.get('url'):  # Using walrus operator to check and assign
+            unique_urls.add(url)
+    
+    return list(unique_urls)
+    
 
 def deduplicate_and_format_sources(
     search_response: Union[Dict, List[Dict]],
@@ -54,22 +112,3 @@ def deduplicate_and_format_sources(
             formatted_text += f"Full source content limited to {max_tokens_per_source} tokens: {raw_content}\n\n"
                 
     return formatted_text.strip()
-
-def format_sections(sections: List[Section]) -> str:
-    """ Format a list of sections into a string """
-    formatted_str = ""
-    for idx, section in enumerate(sections, 1):
-        formatted_str += f"""
-{'='*60}
-Section {idx}: {section.name}
-{'='*60}
-Description:
-{section.description}
-Requires Research: 
-{section.research}
-
-Content:
-{section.content if section.content else '[Not yet written]'}
-
-"""
-    return formatted_str

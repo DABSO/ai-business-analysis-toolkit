@@ -16,7 +16,7 @@ DEFAULT_REPORT_STRUCTURE = """The report structure should focus on breaking-down
    - Provide real-world examples or case studies where applicable
    
 3. Conclusion
-   - Aim for 1 structural element (either a list of table) that distills the main body sections 
+   - Aim for 1 structural element (either a list or table) that distills the main body sections 
    - Provide a concise summary of the report"""
 
 @dataclass(kw_only=True)

@@ -1,13 +1,28 @@
-from typing import Annotated
-
-from typing_extensions import TypedDict
-
 from langgraph.graph import StateGraph, START, END
-from langgraph.graph.message import add_messages
 from agents.research.WebResearcher import graph as webResearcher
+from typing import TypedDict
+from pydantic import BaseModel, Field
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import PromptTemplate
 
-async def generate_research(business_idea: str):
-    # 1. Marktanalyse 
+
+class MarketResearchState(TypedDict):
+    business_idea : str
+    trend_research_report : str
+    competitor_research_report : str
+    customer_analysis_report : str
+    technology_analysis_report : str
+    technology_trends_report : str
+    legal_compliance_report : str
+   
+
+
+class FinalReport(BaseModel):
+    final_report : str = Field(description="The final report formatted as markdown")
+
+
+async def generate_market_trends_report(state : MarketResearchState):
+    business_idea = state["business_idea"]
     market_analysis_topic = f"Erstellen Sie eine umfassende Marktanalyse für das Produkt oder die Dienstleistung: {business_idea}. Ziel ist es, Marktvolumen, Wachstumsraten, Zielsegmente und aktuelle Markttrends zu identifizieren, die für eine potenzielle Markteinführung relevant sind. Die Analyse sollte relevante geografische Märkte, bestehende Marktführer, und mögliche Markteintrittsbarrieren berücksichtigen."
     market_analysis_structure = f"""# Marktanalyse Report-Struktur
 
@@ -38,14 +53,11 @@ async def generate_research(business_idea: str):
         "topic": market_analysis_topic,
         "report_structure": market_analysis_structure
     })
-    yield {
-        "field": "market_analysis_report",
-        "value": market_analysis_report["final_report"]
-    }
+    return {"market_analysis_report": market_analysis_report["final_report"]}
 
-
-    
+async def generate_competitor_analysis_report(state : MarketResearchState):
     # 2. Konkurrentenanalyse
+    business_idea = state["business_idea"]
     competitor_analysis_topic = f"Analysieren Sie die Hauptkonkurrenten für die geplante Business-Idee: {business_idea}. Ziel ist es, deren Marktanteile, Geschäftsmodelle, Stärken, Schwächen und Differenzierungsstrategien zu verstehen, um Wettbewerbsvorteile zu identifizieren."
     competitor_analysis_structure = f"""# Konkurrentenanalyse Report-Struktur
 
@@ -76,17 +88,17 @@ async def generate_research(business_idea: str):
         "topic": competitor_analysis_topic,
         "report_structure": competitor_analysis_structure
     })
-    yield {
-        "field": "competitor_analysis_report",
-        "value": competitor_analysis_report["final_report"]
-    }
+    return {"competitor_analysis_report": competitor_analysis_report["final_report"]}
 
+
+async def generate_customer_analysis_report(state : MarketResearchState):
     # 3. Kundenmeinungsanalyse
+    business_idea = state["business_idea"]
     customer_analysis_topic = f"Führen Sie eine Analyse der Kundenmeinungen und Bewertungen zu bestehenden Produkten oder Dienstleistungen im Zusammenhang mit {business_idea} durch. Ziel ist es, häufige Kundenbedürfnisse, Kritikpunkte und potenzielle Verbesserungsfelder zu identifizieren."
     customer_analysis_structure = f"""# Kundenmeinungsanalyse Report-Struktur
 
 ## Analyse von Bewertungen
-- Sammeln und Auswerten von Kundenbewertungen (z. B. Foren,Blogs, Social Media, Bewertungsplattformen).
+- Sammeln und Auswerten von Kundenbewertungen (z. B. Foren, Blogs, Social Media, Bewertungsplattformen).
 - **KPIs:** 
   - Anzahl analysierter Bewertungen.
   - Anteil positiver/negativer Bewertungen.
@@ -103,17 +115,16 @@ async def generate_research(business_idea: str):
 ## Executive Summary
 - Kurzdarstellung der Kundenpräferenzen und häufigsten Kritikpunkte.
 """
-
+    
     customer_analysis_report = await webResearcher.ainvoke({
         "topic": customer_analysis_topic,
         "report_structure": customer_analysis_structure
     })
-    yield {
-        "field": "customer_analysis_report",
-        "value": customer_analysis_report["final_report"]
-    }
+    return {"customer_analysis_report": customer_analysis_report["final_report"]}
 
 
+async def generate_technology_analysis_report(state : MarketResearchState):
+    business_idea = state["business_idea"]
     # 4. Stand der Technologie
     technology_analysis_topic = f"Recherchieren Sie den aktuellen Stand der Technologie, die für die Umsetzung von {business_idea} erforderlich ist. Ziel ist es, verfügbare technische Lösungen, deren Reifegrad und typische Schwächen zu ermitteln."
     technology_analysis_structure = f"""# Stand der Technologie Report-Struktur
@@ -141,11 +152,11 @@ async def generate_research(business_idea: str):
         "topic": technology_analysis_topic,
         "report_structure": technology_analysis_structure
     })
-    yield {
-        "field": "technology_analysis_report",
-        "value": technology_analysis_report["final_report"]
-    }
+    return {"technology_analysis_report": technology_analysis_report["final_report"]}
 
+
+async def generate_technology_trends_report(state : MarketResearchState):
+    business_idea = state["business_idea"]
     # 5. Technologische Trends
     technology_trends_topic = f"Recherchieren Sie die aktuellen technologischen Trends, die für die Umsetzung von {business_idea} relevant sind. Ziel ist es, die wichtigsten Entwicklungen in der Technologie zu identifizieren, die für die Umsetzung von {business_idea} relevant sind."
     technology_trends_structure = """# Technologische Trends Report-Struktur
@@ -173,51 +184,119 @@ async def generate_research(business_idea: str):
         "topic": technology_trends_topic,
         "report_structure": technology_trends_structure
     })
-    yield {
-        "field": "technology_trends_report",
-        "value": technology_trends_report["final_report"]
-    }
+    return {"technology_trends_report": technology_trends_report["final_report"]}
 
 
 
+async def generate_legal_compliance_report(state : MarketResearchState):
+    business_idea = state["business_idea"]
     # 6. Rechtskonformität 
     legal_compliance_topic = f"Recherchieren Sie regulatorische und gesetzliche Anforderungen, die für die Umsetzung von {business_idea} relevant sind. Ziel ist es, potenzielle Hürden und notwendige Genehmigungen zu identifizieren, um Rechtskonformität sicherzustellen."
     legal_compliance_structure = f"""# Rechtskonformität Report-Struktur
 
-## Gesetzliche Vorschriften
-- Übersicht relevanter Gesetze und Verordnungen (z. B. Datenschutz, Produkthaftung).
-- **KPIs:** 
-  - Anzahl identifizierter Vorschriften.
-  - Schweregrad möglicher Nicht-Konformitäten.
+    ## Gesetzliche Vorschriften
+    - Übersicht relevanter Gesetze und Verordnungen (z. B. Datenschutz, Produkthaftung).
+    - **KPIs:** 
+    - Anzahl identifizierter Vorschriften.
+    - Schweregrad möglicher Nicht-Konformitäten.
 
-## Branchenstandards
-- Übersicht über Zertifizierungen oder Standards (z. B. ISO, CE).
-- **KPIs:** 
-  - Anzahl empfohlener Zertifikate.
-  - Geschätzte Kosten der Zertifizierung.
+    ## Branchenstandards
+    - Übersicht über Zertifizierungen oder Standards (z. B. ISO, CE).
+    - **KPIs:** 
+    - Anzahl empfohlener Zertifikate.
+    - Geschätzte Kosten der Zertifizierung.
 
-## Anforderungen nach Region
-- Analyse länderspezifischer Regelungen und Unterschiede.
-- **KPIs:** 
-  - Anzahl kritischer Abweichungen zwischen Regionen.
+    ## Anforderungen nach Region
+    - Analyse länderspezifischer Regelungen und Unterschiede.
+    - **KPIs:** 
+    - Anzahl kritischer Abweichungen zwischen Regionen.
 
-## Executive Summary
-- Zusammenfassung der wichtigsten regulatorischen Anforderungen.
-"""
+    ## Executive Summary
+    - Zusammenfassung der wichtigsten regulatorischen Anforderungen.
+    """
     
     legal_compliance_report = await webResearcher.ainvoke({
         "topic": legal_compliance_topic,
         "report_structure": legal_compliance_structure
     })
-    yield {
-        "field": "legal_compliance_report",
-        "value": legal_compliance_report["final_report"]
-    }   
-    
-    
-
-      
+    return {"legal_compliance_report": legal_compliance_report["final_report"]}
 
 
+async def generate_final_report(state : MarketResearchState):
 
+    trend_analysis_report = state["trend_analysis_report"]
+    competitor_analysis_report = state["competitor_analysis_report"]
+    customer_analysis_report = state["customer_analysis_report"]
+    technology_analysis_report = state["technology_analysis_report"]
+    technology_trends_report = state["technology_trends_report"]
+    legal_compliance_report = state["legal_compliance_report"]
+
+
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+
+    prompt = PromptTemplate(
+        input_variables=["trend_analysis_report", "competitor_analysis_report", "customer_analysis_report", "technology_analysis_report", "technology_trends_report", "legal_compliance_report"],
+        template="""
+        trend_analysis_report: {trend_analysis_report}
+        competitor_analysis_report: {competitor_analysis_report}
+        customer_analysis_report: {customer_analysis_report}
+        technology_analysis_report: {technology_analysis_report}
+        technology_trends_report: {technology_trends_report}
+        legal_compliance_report: {legal_compliance_report}
+
+        You are a business analyst. You are given a market analysis report, a competitor analysis report, a customer analysis report, a technology analysis report, a technology trends report, and a legal compliance report.
+        You are tasked with creating a final report that includes the most important findings from the given subreports in a final structured report.
+
+        The final report should be formatted as markdown.
+        """
+    ).format(
+        trend_analysis_report=trend_analysis_report,
+        competitor_analysis_report=competitor_analysis_report,
+        customer_analysis_report=customer_analysis_report,
+        technology_analysis_report=technology_analysis_report,
+        technology_trends_report=technology_trends_report,
+        legal_compliance_report=legal_compliance_report
+    )
+
+    llm_with_structured_output = llm.with_structured_output(FinalReport)
+
+    final_report = llm_with_structured_output.invoke(prompt)
+
+    return {"final_report": final_report}
+
+
+
+
+
+
+
+def get_market_research_graph():
+    graph = StateGraph()
+
+    graph.add_node("generate_market_trends_report", generate_market_trends_report)
+    graph.add_node("generate_competitor_analysis_report", generate_competitor_analysis_report)
+    graph.add_node("generate_customer_analysis_report", generate_customer_analysis_report)
+    graph.add_node("generate_technology_analysis_report", generate_technology_analysis_report)
+    graph.add_node("generate_technology_trends_report", generate_technology_trends_report)
+    graph.add_node("generate_legal_compliance_report", generate_legal_compliance_report)
+    graph.add_node("generate_final_report", generate_final_report)
+
+    graph.add_edge(START, "generate_market_trends_report")
+    graph.add_edge(START, "generate_competitor_analysis_report")
+    graph.add_edge(START, "generate_customer_analysis_report")
+    graph.add_edge(START, "generate_technology_analysis_report")
+    graph.add_edge(START, "generate_technology_trends_report")
+    graph.add_edge(START, "generate_legal_compliance_report")
+
+    graph.add_edge("generate_market_trends_report", "generate_final_report")
+    graph.add_edge("generate_competitor_analysis_report", "generate_final_report")
+    graph.add_edge("generate_customer_analysis_report", "generate_final_report")
+    graph.add_edge("generate_technology_analysis_report", "generate_final_report")
+    graph.add_edge("generate_technology_trends_report", "generate_final_report")
+    graph.add_edge("generate_legal_compliance_report", "generate_final_report")
+
+    graph.add_edge("generate_final_report", END)
+
+    return graph.compile()
 

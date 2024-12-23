@@ -1,7 +1,7 @@
 from agents.research.WebResearcher import graph as webResearcher
 import streamlit as st
 import asyncio
-from flow import generate_research
+from experiments.flow import generate_research
 
 async def process_results(topic: str):
     async for result in generate_research(topic):
@@ -11,7 +11,7 @@ async def process_results(topic: str):
         st.markdown("---")
 
 def main():
-    st.title("Business Model Canvas Generator")
+    st.title("´Market Research Report Generator")
     
     # User Input
     topic = st.text_input("Geben Sie ein Thema ein:", "")

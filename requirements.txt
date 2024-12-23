@@ -1,0 +1,13 @@
+langgraph
+langchain
+langchain-community
+langchain-openai
+pydantic
+python-dotenv
+requests
+asyncio
+chromium
+pyppeteer
+pillow
+markdown 
+pdfkit

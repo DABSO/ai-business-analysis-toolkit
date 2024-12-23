@@ -48,3 +48,7 @@ htmlcov/
 .coverage.*
 coverage.xml
 *.cover
+
+/screenshots/*
+
+/experiments/*
