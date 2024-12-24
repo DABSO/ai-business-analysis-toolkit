@@ -52,7 +52,14 @@ report_writer_model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 # Utility function for loading prompts
 
 def load_prompt(file_name: str) -> str:
-    """Load prompt text from a file."""
+    """Load prompt text from a file.
+    
+    Args:
+        file_name (str): Name of the prompt file to load
+        
+    Returns:
+        str: Content of the prompt file
+    """
     prompt_path = os.path.join(os.path.dirname(__file__), 'prompts', file_name)
     with open(prompt_path, 'r', encoding='utf-8') as file:
         return file.read()
@@ -68,22 +75,33 @@ final_section_writer_instructions = load_prompt('final_section_writer_instructio
 # Prompts are now loaded from external .txt files
 
 # ------------------------------------------------------------
-# Define Utility functions (assumed to be in utils.py)
 
-# Skipped for brevity
 
 # ------------------------------------------------------------
 # Define Graph Nodes and Workflow
 
 def log_function_call(func_name: str, **kwargs):
-    """Helper to log function calls with parameters"""
+    """Helper function to log function calls and their parameters.
+    
+    Args:
+        func_name (str): Name of the function being logged
+        **kwargs: Variable keyword arguments representing function parameters to log
+    """
     params_str = ', '.join(f'{k}={v}' for k, v in kwargs.items())
     logger.info(f"Executing {func_name} with params: {params_str}")
 
 
 
 async def generate_report_plan(state: ReportState, config: RunnableConfig):
-    """Generate the report plan"""
+    """Generate the initial report plan including sections and queries.
+    
+    Args:
+        state (ReportState): Current state containing the report topic
+        config (RunnableConfig): Configuration parameters for report generation
+        
+    Returns:
+        dict: Dictionary containing planned report sections
+    """
     log_function_call("generate_report_plan", topic=state['topic'], config=config)
     
     # Inputs
@@ -142,7 +160,15 @@ async def generate_report_plan(state: ReportState, config: RunnableConfig):
     return {"sections": report_sections.sections}
 
 def generate_queries(state: SectionState, config: RunnableConfig):
-    """Generate search queries for a report section"""
+    """Generate search queries for a specific report section.
+    
+    Args:
+        state (SectionState): Current section state including section details
+        config (RunnableConfig): Configuration parameters for query generation
+        
+    Returns:
+        dict: Dictionary containing generated search queries that get added to the state
+    """
     log_function_call(
         "generate_queries", 
         section_name=state['section'].name,
@@ -175,7 +201,15 @@ def generate_queries(state: SectionState, config: RunnableConfig):
     return {"search_queries": queries.queries}
 
 async def search_web(state: SectionState, config: RunnableConfig):
-    """Search the web for each query"""
+    """Perform web searches for the generated queries.
+    
+    Args:
+        state (SectionState): Current section state including search queries
+        config (RunnableConfig): Configuration parameters for web search
+        
+    Returns:
+        dict: Dictionary containing formatted search results that get added to the state
+    """
     log_function_call(
         "search_web", 
         queries=[q.search_query for q in state['search_queries']],
@@ -200,7 +234,14 @@ async def search_web(state: SectionState, config: RunnableConfig):
     return {"source_str": source_str}
 
 def write_section(state: SectionState):
-    """Write a section of the report"""
+    """Write content for a single section based on research results.
+    
+    Args:
+        state (SectionState): Current section state including research data
+        
+    Returns:
+        dict: Dictionary containing the completed section that gets added to the state
+    """
     log_function_call(
         "write_section",
         section_name=state['section'].name,
@@ -230,7 +271,14 @@ def write_section(state: SectionState):
     return {"completed_sections": [section]}
 
 def write_final_sections(state: SectionState):
-    """Write final sections of the report"""
+    """Write final sections of the report using research from other sections.
+    
+    Args:
+        state (SectionState): Current section state including research content
+        
+    Returns:
+        dict: Dictionary containing the completed final sections that gets added to the state
+    """
     log_function_call(
         "write_final_sections",
         section_name=state['section'].name,
@@ -260,7 +308,14 @@ def write_final_sections(state: SectionState):
     return {"completed_sections": [section]}
 
 def gather_completed_sections(state: ReportState):
-    """Gather completed sections"""
+    """Collect and format all completed sections.
+    
+    Args:
+        state (ReportState): Current report state with completed sections
+        
+    Returns:
+        dict: Dictionary containing formatted report sections that gets added to the state
+    """
     completed = [s.name for s in state["completed_sections"]]
     logger.info(f"Gathering completed sections: {completed}")
     
@@ -273,7 +328,14 @@ def gather_completed_sections(state: ReportState):
     return {"report_sections_from_research": completed_report_sections}
 
 def initiate_section_writing(state: ReportState):
-    """Map step for web research sections"""
+    """Initialize parallel processing of sections requiring web research.
+    
+    Args:
+        state (ReportState): Current report state with planned sections
+        
+    Returns:
+        list: List of Send objects for parallel section processing that gets added to the state
+    """
     research_sections = [s for s in state["sections"] if s.research]
     logger.info(f"Initiating section writing for research sections: {[s.name for s in research_sections]}")
     
@@ -284,7 +346,14 @@ def initiate_section_writing(state: ReportState):
     ]
 
 def initiate_final_section_writing(state: ReportState):
-    """Initiate writing of final sections"""
+    """Initialize writing of sections that don't require research.
+    
+    Args:
+        state (ReportState): Current report state with research content
+        
+    Returns:
+        list: List of Send objects for final section writing that gets added to the state
+    """
     non_research_sections = [s for s in state["sections"] if not s.research]
     logger.info(f"Initiating final section writing for: {[s.name for s in non_research_sections]}")
     
@@ -295,7 +364,14 @@ def initiate_final_section_writing(state: ReportState):
     ]
 
 def compile_final_report(state: ReportState):
-    """Compile the final report"""
+    """Combine all sections into the final report.
+    
+    Args:
+        state (ReportState): Current report state with all completed sections
+        
+    Returns:
+        dict: Dictionary containing the complete final report that gets added to the state
+    """
     log_function_call(
         "compile_final_report",
         num_sections=len(state['sections']),
@@ -338,7 +414,11 @@ section_builder.add_edge("write_section", END)
 from .schemas import ReportStateInput, ReportStateOutput
 
 def build_report_graph():
-    """Build the main report state graph"""
+    """Construct the main state graph for report generation.
+    
+    Returns:
+        StateGraph: Compiled graph for orchestrating the report generation process 
+    """
     builder = StateGraph(
         ReportState, 
         input=ReportStateInput, 

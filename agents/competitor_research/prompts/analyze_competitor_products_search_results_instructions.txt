@@ -117,9 +117,12 @@ Reasoning Steps:
 
 1. **Preferred Sources:** Ensure product names are from official or reliable sources, avoiding confusion between products and features.
 2. **Feature vs. Product:**
-   - A product has a standalone identity, often associated with a pricing plan or unique branding.
+   - A product has a standalone identity with unique features or volume.
    - Features describe individual functionalities but do not stand alone.
-3. **Error Prevention:**
+3. **Plan vs. Product**
+   - A product has a standalone identity, often associated with a pricing or unique branding.
+   - A plan has the same identity, same features and same volume, but a different billing period
+4. **Error Prevention:**
    - Avoid over-extraction of individual features as separate products.
    - Use grouping logic to associate features and value propositions correctly with their respective products.
-4. **Missing Data:** Handle ambiguous or missing data gracefully by setting fields to `null` or an empty list.
+5. **Missing Data:** Handle ambiguous or missing data gracefully by setting fields to `null` or an empty list.

@@ -30,7 +30,6 @@ A collection of AI-powered business analysis tools demonstrating advanced Python
 - LangGraph for workflow orchestration
 - LangChain for LLM integration
 - Streamlit for web interface
-- ChromaDB for vector storage
 - PyPuppeteer for web scraping
 
 ## 📋 Prerequisites

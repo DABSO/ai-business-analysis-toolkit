@@ -1,4 +1,3 @@
-
 from .utils import load_prompt
 from .schemas import CompetitorState, CompetitorStateOutput, CompetitionState, CompetitionStateInput, CompetitionStateOutput, CompetitorOutput, CompetitorNameList, ProductList, QueryGeneratorOutput, CompetitorReport
 from langgraph.graph import START, END, StateGraph
@@ -17,7 +16,17 @@ import datetime
 query_generator_model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 report_writer_model = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
-async def search_for_competitors(state : CompetitionState, config: RunnableConfig):
+async def search_for_competitors(state: CompetitionState, config: RunnableConfig):
+    """
+    Search for potential competitors based on the business idea.
+    
+    Args:
+        state (CompetitionState): Current competition research state
+        config (RunnableConfig): Configuration for the runnable
+        
+    Returns:
+        dict: Dictionary containing search results for competitors that get added to the state
+    """
     print("search_for_competitors", state)
 
     print("num_competition_tokens_per_source", state["num_stat_tokens_per_source"])
@@ -56,7 +65,16 @@ async def search_for_competitors(state : CompetitionState, config: RunnableConfi
     return {"competition_search_results": search_docs}
 
 
-async def analyze_competitor_search_results(state : CompetitionState):
+async def analyze_competitor_search_results(state: CompetitionState):
+    """
+    Analyze search results to extract competitor names.
+    
+    Args:
+        state (CompetitionState): Current competition research state
+        
+    Returns:
+        dict: Dictionary containing list of competitor names that get added to the state
+    """
     print("analyze_competitor_search_results")
     # load prompt 
     analyze_competitor_search_results_prompt = load_prompt('analyze_competitor_search_results_instructions.txt')
@@ -102,7 +120,16 @@ async def analyze_competitor_search_results(state : CompetitionState):
     return {"competitor_names": competitors}
 
 
-def initialize_competitor_research(state : CompetitionState):
+def initialize_competitor_research(state: CompetitionState):
+    """
+    Initialize individual competitor research tasks.
+    
+    Args:
+        state (CompetitionState): Current competition research state
+        
+    Returns:
+        list: List of competitor analysis jobs to be dispatched 
+    """
     competitors = state["competitor_names"]
 
     print("stat_tokens_per_source", state["num_stat_tokens_per_source"])
@@ -121,7 +148,16 @@ def initialize_competitor_research(state : CompetitionState):
         for competitor in competitors
     ] 
 
-async def search_for_competitor_stats(state : CompetitorState):
+async def search_for_competitor_stats(state: CompetitorState):
+    """
+    Search for statistical information about a specific competitor.
+    
+    Args:
+        state (CompetitorState): Current state for competitor analysis
+        
+    Returns:
+        dict: Dictionary containing statistical search results and sources that get added to the state
+    """
     print("search_for_competitor_stats", state)
     # get prompt
     # format prompt 
@@ -155,7 +191,16 @@ async def search_for_competitor_stats(state : CompetitorState):
     return {"stat_source_content": source_str, "stat_sources": get_unique_urls(search_docs) }
 
 
-async def analyze_competitor_stats_search_results(state : CompetitorState):
+async def analyze_competitor_stats_search_results(state: CompetitorState):
+    """
+    Analyze search results to extract competitor statistics.
+    
+    Args:
+        state (CompetitorState): Current state for competitor analysis
+        
+    Returns:
+        dict: Dictionary containing extracted competitor statistics that get added to the state
+    """
     # get prompt
     print("analyze_competitor_stats_search_results")
     analyze_competitor_stats_search_results_prompt = load_prompt('analyze_competitor_stats_search_results_instructions.txt')
@@ -202,7 +247,16 @@ async def analyze_competitor_stats_search_results(state : CompetitorState):
 
     
 
-async def search_for_competitor_products(state : CompetitorState):
+async def search_for_competitor_products(state: CompetitorState):
+    """
+    Search for products/services offered by a specific competitor.
+    
+    Args:
+        state (CompetitorState): Current state for competitor analysis
+        
+    Returns:
+        dict: Dictionary containing product search results and sources that get added to the state
+    """
     print("search_for_competitor_products")
     # load prompt 
     search_for_competitor_products_prompt = load_prompt('search_for_competitor_products_instructions.txt')
@@ -233,7 +287,16 @@ async def search_for_competitor_products(state : CompetitorState):
     print("length of source_str", len(source_str))
     return {"product_source_content": source_str, "product_sources": get_unique_urls(search_docs)}
 
-async def analyze_competitor_products_search_results(state : CompetitorState):
+async def analyze_competitor_products_search_results(state: CompetitorState):
+    """
+    Analyze search results to extract competitor products information.
+    
+    Args:
+        state (CompetitorState): Current state for competitor analysis
+        
+    Returns:
+        dict: Dictionary containing list of competitor products that get added to the CompetitorState
+    """
     print("analyze_competitor_products_search_results", len(state["product_source_content"]))
     print("<product_source_content>", state["product_source_content"], "</product_source_content>")
 
@@ -278,6 +341,15 @@ async def analyze_competitor_products_search_results(state : CompetitorState):
 
 
 def write_competitor_report(state: CompetitorState):
+    """
+    Generate a comprehensive report about the competitor.
+    
+    Args:
+        state (CompetitorState): Current state for competitor analysis
+        
+    Returns:
+        dict: Dictionary containing competitor report and all gathered information that get added to the CompetitorState
+    """
     print("write_competitor_report")
 
     # write report 
@@ -326,11 +398,26 @@ def write_competitor_report(state: CompetitorState):
     print("--------------------------------")
     return {"competitors": [competitor]}
 
-def aggregate_competitors(state : CompetitionState):
-
+def aggregate_competitors(state: CompetitionState):
+    """
+    Aggregate all competitor information into final output.
+    
+    Args:
+        state (CompetitionState): Current competition research state
+        
+    Returns:
+        dict: Empty dictionary (placeholder for future implementation)
+    """
+    # ... existing code ...
     return {}
 
 def get_competitor_research_graph():
+    """
+    Create and configure the competitor research workflow graph.
+    
+    Returns:
+        StateGraph: Compiled graph for analyzing individual competitors
+    """
     builder = StateGraph(
         CompetitorState, 
         output=CompetitorStateOutput, 
@@ -353,6 +440,12 @@ def get_competitor_research_graph():
     return builder.compile()
 
 def get_competition_research_graph():
+    """
+    Create and configure the main competition research workflow graph.
+    
+    Returns:
+        StateGraph: Compiled graph for the complete competition research process
+    """
     builder = StateGraph(
         CompetitionState, 
         input=CompetitionStateInput, 
