@@ -90,13 +90,14 @@ streamlit run business_landscape_research_generator.py
 4. View Results
 
 ## 📁 Project Structure
+```text
 ├── agents/
 │ ├── competitor_research/ # Competitor analysis workflows
 │ ├── research/ # General research capabilities
 │ └── business_landscape_research/ # Market analysis Research
 ├── utils/ 
 ├── tools/ 
-
+```
 
 
 
