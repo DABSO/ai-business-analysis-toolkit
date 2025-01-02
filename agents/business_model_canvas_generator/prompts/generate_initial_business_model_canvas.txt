@@ -1,0 +1,51 @@
+prompt = f"""
+Your task is to create a structured and thoughtful business plan based on the given business idea: {business_idea}. 
+The goal is to fill out the following schema to the best of your ability. In the field "analysis," you should discuss 
+possible values for the respective elements and justify your final choices. Make sure the content is logical, coherent, 
+and directly aligned with the provided business idea.
+
+
+- "type": "object",
+- "properties":
+    - "general_information":
+        - "business_name": Provide a relevant and creative name for the business model or project title.
+        - "business_model_type": Select the most fitting classification from ["B2B", "B2C", "B2B2C", "Hybrid", "D2C"].
+        - "industry": Specify the industry this business idea belongs to.
+    - "target_segments":
+        - "customer_type": Define primary customer segments, choosing from ["B2C", "B2B", "Hybrid"].
+        - "demographics": Describe key demographic characteristics, including:
+            - "age_range": Define the age group of the target audience (e.g., ["Young Adults", "Adults"]).
+            - "income_level": Select one income level ["Low", "Middle", "High"].
+            - "lifestyle": Describe the lifestyle of the target audience.
+        - "purchasing_behavior": Specify the purchasing behavior ["Impulse", "Planned", "Habitual", "Complex"].
+        - "geographic_segmentation": Optionally describe geographic segmentation.
+    - "value_proposition":
+        - "usp": Choose a unique selling proposition from ["Cost Leadership", "Quality Leadership", "Service Orientation", "Sustainability", "Innovation"].
+        - "customer_problem": Describe the primary problem it solves.
+        - "job_to_be_done": Explain the specific task or job it helps accomplish.
+        - "customer_pains": Highlight the pains or frustrations customers face.
+        - "customer_gains": Outline the benefits or gains customers will experience.
+    - "offer_portfolio":
+        - "main_offer": List the main products or services provided.
+        - "additional_offers": Optionally list any additional offers or supplementary services.
+    - "revenue_model":
+        - "revenue_model": Select suitable revenue models from ["Transaction Model", "Subscription Model", "Freemium Model", "Advertising Model", "Licensing", "Marketplace Model", "Data Monetization", "Platform Fees"].
+        - "pricing_strategy": Choose a pricing strategy from ["Value-Based Pricing", "Cost-Plus Pricing", "Dynamic Pricing", "Premium Pricing", "Penetration Pricing"].
+    - "presence":
+        - "presence_form": Define the form of presence ["Physical", "Digital", "Hybrid"].
+        - "service_area": Specify the geographic coverage ["Local", "Regional", "National", "International"].
+    - "strategy":
+        - "growth_strategy": Choose a growth strategy from ["Market Penetration", "Market Development", "Product Development", "Diversification"].
+        - "competitive_strategy": Choose a competitive strategy from ["Cost Leadership", "Differentiation", "Focus"].
+    - "marketing":
+        - "channels": Specify marketing channels, such as ["Social Media", "SEO", "SEA", "Email Marketing", "Influencer Marketing", "Others"].
+        - "branding_strategy": Choose a branding strategy from ["Premium", "Price-Oriented", "Mass Market", "Niche"].
+    - "resources":
+        - "key_resources": List key resources, such as ["Technology", "Human Resources", "Capital", "Data", "Brand Name", "Others"].
+        - "key_partners": List key partners involved.
+    - "processes":
+        - "main_activities": Define key activities such as ["Production", "Development", "Marketing", "Logistics", "Service", "Customer Support", "Others"].
+        - "automation_potential": State whether there is automation potential (true/false).
+
+Focus on clear reasoning and logical choices, ensuring that all fields are consistent with the business idea.
+If any assumptions are made, clearly state and justify them.
